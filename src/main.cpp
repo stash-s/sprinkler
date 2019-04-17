@@ -1,37 +1,53 @@
 #include <Arduino.h>
 #include <Homie.h>
 
-const uint8_t valvePins[] = {4, 5, 10, 11};
-const uint8_t flowSensorPin = 7;
+const unsigned int NUMBER_OF_VALVES = 4;
+const uint8_t valvePins[NUMBER_OF_VALVES] = {16, 14, 12, 13};
+const uint8_t flowSensorPin = 15;
 
-HomieNode valveBoxNode("valveBox", "Valve", "switch", true);
+HomieNode valveBoxNode("valveBox", "Valve", "switch", true, 1, NUMBER_OF_VALVES);
 HomieNode flowNode("flow", "Water Flow", "flow");
 
 bool valveHandler(const HomieRange &range, const String &value)
 {
-  if (value != "true" && value != "false")
-    return false;
+    if (value != "true" && value != "false")
+        return false;
 
-  const bool on = (value == "true");
+    if (!range.isRange)
+        return false;
 
-  Homie.getLogger() << "valve " << range.index << " set to " << value << endl;
+    if (range.index < 1 || range.index > NUMBER_OF_VALVES)
+        return false;
 
-  digitalWrite(valvePins[range.index] - 1, on);
+    if (value != "on" && value != "off")
+        return false;
 
-  valveBoxNode.setProperty("state").setRange(range).send(value);
+    const bool on = (value == "on");
 
-  return true;
+    Homie.getLogger() << "valve " << range.index << " set to " << value << endl;
+
+    digitalWrite(valvePins[range.index] - 1, on ? HIGH : LOW);
+
+    valveBoxNode.setProperty("state").setRange(range).send(value);
+
+    return true;
 }
 
 void setup()
 {
-  Homie_setFirmware("sprinkler", "0.0.1");
-  valveBoxNode.advertise("valve").setName("On").setDatatype("boolean").settable(valveHandler);
-  flowNode.advertise("flow").setDatatype("float");
-  Homie.setup();
+    for (auto i : valvePins)
+    {
+        pinMode(i, OUTPUT);
+        digitalWrite(i, LOW);
+    }
+
+    Homie_setFirmware("sprinkler", "0.0.1");
+    valveBoxNode.advertise("valve").setName("Valve").setDatatype("boolean").settable(valveHandler);
+    flowNode.advertise("flow").setDatatype("float");
+    Homie.setup();
 }
 
 void loop()
 {
-  Homie.loop();
+    Homie.loop();
 }
