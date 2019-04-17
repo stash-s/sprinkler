@@ -1,9 +1,10 @@
 #include <Arduino.h>
 #include <Homie.h>
 
-HomieNode valveBoxNode("valveBox", "Valve", "switch", true);
-
 uint8_t valvePins[] = {4, 5, 10, 11};
+
+HomieNode valveBoxNode("valveBox", "Valve", "switch", true);
+HomieNode flowNode("flow", "Water Flow", "flow");
 
 bool valveHandler(const HomieRange &range, const String &value)
 {
