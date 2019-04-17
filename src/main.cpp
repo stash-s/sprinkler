@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include <Homie.h>
 
-uint8_t valvePins[] = {4, 5, 10, 11};
+const uint8_t valvePins[] = {4, 5, 10, 11};
+const uint8_t flowSensorPin = 7;
 
 HomieNode valveBoxNode("valveBox", "Valve", "switch", true);
 HomieNode flowNode("flow", "Water Flow", "flow");
@@ -26,6 +27,7 @@ void setup()
 {
   Homie_setFirmware("sprinkler", "0.0.1");
   valveBoxNode.advertise("valve").setName("On").setDatatype("boolean").settable(valveHandler);
+  flowNode.advertise("flow").setDatatype("float");
   Homie.setup();
 }
 
