@@ -35,12 +35,15 @@ bool valveHandler(const HomieRange &range, const String &value)
 
 void setup()
 {
+    Serial.begin(9600);
+
     for (auto i : valvePins)
     {
         pinMode(i, OUTPUT);
         digitalWrite(i, LOW);
     }
 
+    Homie_setBrand("sprinkler");
     Homie_setFirmware("sprinkler", "0.0.1");
     valveBoxNode.advertise("valve").setName("Valve").setDatatype("boolean").settable(valveHandler);
     flowNode.advertise("flow").setDatatype("float");
