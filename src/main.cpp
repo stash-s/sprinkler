@@ -23,26 +23,6 @@ unsigned long timeout = 0;
  *    - Sprinkler A is open (on) and timeout is set
  * */
 
-bool valveOnOffHandler(const HomieRange &range, const String &value)
-{
-
-    Homie.getLogger() << "valve " << range.index << " set to " << value << endl;
-
-    if (!ValveNode::isValidRange(range))
-        return false;
-
-    if (value != "on" && value != "off")
-        return false;
-
-    const bool on = (value == "on");
-
-    digitalWrite(valvePins[range.index - 1], on ? HIGH : LOW);
-
-    valveNode.setProperty("state").setRange(range).send(value);
-
-    return true;
-}
-
 void setup()
 {
     Serial.begin(9600);

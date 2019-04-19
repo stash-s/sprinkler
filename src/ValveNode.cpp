@@ -8,6 +8,7 @@ ValveNode::ValveNode(const char *id, const char *name)
 
 void ValveNode::setup()
 {
+    Homie.getLogger() << "Valve Node setup invoked <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << endl;
     for (auto i : valvePins)
     {
         pinMode(i, OUTPUT);
@@ -15,7 +16,11 @@ void ValveNode::setup()
     }
 
     advertise("state").setName("Valve").setDatatype("string").setFormat("on,off").setRetained(true);
-    advertise("timeout").setName("Timeout").setDatatype("integer").setRetained(true).settable([&](const HomieRange &range, const String &value) { return valveTimeOutHandler(range, value); });
+    advertise("timeout").setName("Timeout").setDatatype("integer").settable([&](const HomieRange &range, const String &value) {
+        Homie.getLogger() << "calling timeout handler <<<<<<<<<<<<<<<<<<" << endl;
+        return valveTimeOutHandler(range, value);
+    });
+    Homie.getLogger() << "Valve Node setup done <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< +++" << endl;
 }
 
 void ValveNode::loop(void)
@@ -23,12 +28,18 @@ void ValveNode::loop(void)
     auto timeNow = millis();
     auto timeElapsed = timeNow - timeOfLastUpdate;
 
-    if (timeElapsed >= LOOP_PERIOD_MILLIS || timeElapsed >= timeout)
+    //Homie.getLogger() << "timeNow = " << timeNow << " timeElapsed = " << timeElapsed << " timeofLastUpdate = " << timeOfLastUpdate << endl;
+
+    if ((timeElapsed >= LOOP_PERIOD_MILLIS) || (timeout && (timeNow >= timeout)))
     {
         timeOfLastUpdate = timeNow;
 
-        if (timeout <= timeNow)
+        if (timeout && (timeout <= timeNow))
         {
+            Homie.getLogger() << "timing out -> shutting valves" << endl;
+
+            timeout = 0;
+
             for (auto i : valvePins)
             {
                 digitalWrite(i, LOW);
@@ -44,25 +55,27 @@ void ValveNode::loop(void)
                 setProperty("timeout").setRange(range).send("0");
             }
         }
-    }
-    else
-    {
-        for (unsigned int i = 1; i <= NUMBER_OF_VALVES; ++i)
+        else
         {
-            HomieRange range;
-            range.index = i;
-            range.isRange = true;
+            Homie.getLogger() << "not timing out -> keeping one valve on" << endl;
 
-            int state = digitalRead(valvePins[i - 1]);
-            if (state)
+            for (unsigned int i = 1; i <= NUMBER_OF_VALVES; ++i)
             {
-                setProperty("state").setRange(range).send("on");
-                setProperty("timeout").setRange(range).send(String((timeout - timeNow) / 1000));
-            }
-            else
-            {
-                setProperty("state").setRange(range).send("off");
-                setProperty("timeout").setRange(range).send("0");
+                HomieRange range;
+                range.index = i;
+                range.isRange = true;
+
+                int state = digitalRead(valvePins[i - 1]);
+                if (state)
+                {
+                    setProperty("state").setRange(range).send("on");
+                    setProperty("timeout").setRange(range).send(String((timeout - timeNow) / 1000));
+                }
+                else
+                {
+                    setProperty("state").setRange(range).send("off");
+                    setProperty("timeout").setRange(range).send("0");
+                }
             }
         }
     }
