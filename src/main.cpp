@@ -1,22 +1,34 @@
 #include <Arduino.h>
 #include <Homie.h>
 
-const unsigned int NUMBER_OF_VALVES = 4;
-const uint8_t valvePins[NUMBER_OF_VALVES] = {16, 14, 12, 13};
-const uint8_t flowSensorPin = 15;
+#include "ValveNode.h"
 
-HomieNode valveBoxNode("valveBox", "Valve", "switch", true, 1, NUMBER_OF_VALVES);
-HomieNode flowNode("flow", "Water Flow", "flow");
+ValveNode valveNode("valve", "Valve");
+//HomieNode flowNode("flow", "Water Flow", "flow");
 
-bool valveHandler(const HomieRange &range, const String &value)
+/**
+ * Static variables
+ * */
+unsigned long timeout = 0;
+
+/**
+ * Use cases
+ * 
+ * 1. Switch on sprinkler and let it stay on for a time given in seconds.
+ *    - all other sprinklers are switched off. Controller publishes new state of each valve: on/off state and timeout
+ *    - controller periodically publishes on/off state and timeout of each valve
+ * 
+ * 2. Switch on sprinkler A while other sprinkler B is running
+ *    - sprinkler B is closed and timeout is set to zero. Both values are published
+ *    - Sprinkler A is open (on) and timeout is set
+ * */
+
+bool valveOnOffHandler(const HomieRange &range, const String &value)
 {
-    if (value != "true" && value != "false")
-        return false;
 
-    if (!range.isRange)
-        return false;
+    Homie.getLogger() << "valve " << range.index << " set to " << value << endl;
 
-    if (range.index < 1 || range.index > NUMBER_OF_VALVES)
+    if (!ValveNode::isValidRange(range))
         return false;
 
     if (value != "on" && value != "off")
@@ -24,11 +36,9 @@ bool valveHandler(const HomieRange &range, const String &value)
 
     const bool on = (value == "on");
 
-    Homie.getLogger() << "valve " << range.index << " set to " << value << endl;
+    digitalWrite(valvePins[range.index - 1], on ? HIGH : LOW);
 
-    digitalWrite(valvePins[range.index] - 1, on ? HIGH : LOW);
-
-    valveBoxNode.setProperty("state").setRange(range).send(value);
+    valveNode.setProperty("state").setRange(range).send(value);
 
     return true;
 }
@@ -37,16 +47,9 @@ void setup()
 {
     Serial.begin(9600);
 
-    for (auto i : valvePins)
-    {
-        pinMode(i, OUTPUT);
-        digitalWrite(i, LOW);
-    }
-
     Homie_setBrand("sprinkler");
     Homie_setFirmware("sprinkler", "0.0.1");
-    valveBoxNode.advertise("valve").setName("Valve").setDatatype("boolean").settable(valveHandler);
-    flowNode.advertise("flow").setDatatype("float");
+
     Homie.setup();
 }
 
