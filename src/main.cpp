@@ -2,16 +2,17 @@
 #include <Homie.h>
 
 #include "ValveNode.h"
+#include "WaterFlowNode.h"
 
 ValveNode valveNode("valve", "Valve");
-//HomieNode flowNode("flow", "Water Flow", "flow");
+WaterFlowNode waterFlowNode("water", "Water Flow");
 
 void setup()
 {
     Serial.begin(9600);
 
     Homie_setBrand("sprinkler");
-    Homie_setFirmware("sprinkler", "0.0.1");
+    Homie_setFirmware("sprinkler", "0.2.0");
 
     Homie.setup();
 }
