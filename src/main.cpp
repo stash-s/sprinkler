@@ -7,8 +7,7 @@
 ValveNode valveNode("valve", "Valve");
 WaterFlowNode waterFlowNode("water", "Water Flow");
 
-void setup()
-{
+void setup() {
     Serial.begin(9600);
 
     Homie_setBrand("sprinkler");
@@ -17,7 +16,4 @@ void setup()
     Homie.setup();
 }
 
-void loop()
-{
-    Homie.loop();
-}
+void loop() { Homie.loop(); }

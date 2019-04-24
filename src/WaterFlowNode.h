@@ -2,17 +2,19 @@
 
 #include <Homie.h>
 
-class WaterFlowNode : public HomieNode
-{
-public:
-    WaterFlowNode(const char *id, const char *name, uint8_t sensorPin = 5);
+const uint8_t FLOW_SENSOR_PIN = D2;
+
+class WaterFlowNode : public HomieNode {
+   public:
+    WaterFlowNode(const char *id, const char *name,
+                  uint8_t sensorPin = FLOW_SENSOR_PIN);
 
     void setup() override;
     void loop() override;
 
     uint8_t getSensorPin();
 
-private:
+   private:
     uint8_t sensorPin;
 
     const unsigned long FLOW_INTERVAL = 1000UL;
