@@ -38,6 +38,7 @@ void WaterFlowNode::loop() {
     if (time_elapsed >= FLOW_INTERVAL || last_update_time == 0) {
         unsigned long incremental_beats = flow_count - last_state_seen;
 
+        
         if (incremental_beats) {
             float incremental_flow = (float)incremental_beats / beats_per_litre;
 
