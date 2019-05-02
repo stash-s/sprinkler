@@ -6,7 +6,7 @@ WaterFlowNode::WaterFlowNode(const char *id, const char *name,
 
 static unsigned int flow_count = 0;
 
-ICACHE_FLASH_ATTR void flow_meter_isr() { ++flow_count; }
+ICACHE_RAM_ATTR void flow_meter_isr() { ++flow_count; }
 
 void WaterFlowNode::setup() {
     pinMode(getSensorPin(), INPUT);
@@ -46,7 +46,7 @@ void WaterFlowNode::loop() {
             last_update_time = time_now;
 
             setProperty("flow").send(to_string(incremental_flow));
-            setProperty("beats").send(String(flow_count));
+            setProperty("beats").send(String(incremental_beats));
             setProperty("cumulative-beats").send(String(flow_count));
         }
     }

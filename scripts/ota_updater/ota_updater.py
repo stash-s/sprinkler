@@ -2,22 +2,16 @@
 
 from __future__ import division, print_function
 import paho.mqtt.client as mqtt
-import base64
-import sys
-import math
+import base64, sys, math
 from hashlib import md5
 
 # The callback for when the client receives a CONNACK response from the server.
-
-
 def on_connect(client, userdata, flags, rc):
     if rc != 0:
         print("Connection Failed with result code {}".format(rc))
         client.disconnect()
     else:
         print("Connected with result code {}".format(rc))
-
-    print("Subscribing to {base_topic}{device_id}/$state".format(**userdata))
 
     client.subscribe("{base_topic}{device_id}/$state".format(**userdata))
 
@@ -33,25 +27,20 @@ def on_message(client, userdata, msg):
         status = int(msg.payload.split()[0])
 
         if userdata.get("published"):
-            if status == 206:  # in progress
+            if status == 206: # in progress
                 # state in progress, print progress bar
-                progress, total = [int(x)
-                                   for x in msg.payload.split()[1].split('/')]
+                progress, total = [int(x) for x in msg.payload.split()[1].split('/')]
                 bar_width = 30
                 bar = int(bar_width*(progress/total))
                 print("\r[", '+'*bar, ' '*(bar_width-bar), "] ", msg.payload.split()[1], end='', sep='')
                 if (progress == total):
                     print()
                 sys.stdout.flush()
-            elif status == 304:  # not modified
-                print("Device firmware already up to date with md5 checksum: {}".format(
-                    userdata.get('md5')))
+            elif status == 304: # not modified
+                print("Device firmware already up to date with md5 checksum: {}".format(userdata.get('md5')))
                 client.disconnect()
-            elif status == 403:  # forbidden
+            elif status == 403: # forbidden
                 print("Device ota disabled, aborting...")
-                client.disconnect()
-            elif status == 500:  # internal error
-                print("Internal error, aborting...")
                 client.disconnect()
 
     elif msg.topic.endswith('$fw/checksum'):
@@ -60,17 +49,15 @@ def on_message(client, userdata, msg):
         if userdata.get("published"):
             if checksum == userdata.get('md5'):
                 print("Device back online. Update Successful!")
+                client.disconnect()
             else:
-                print("Expecting checksum {}, got {}, update failed!".format(
-                    userdata.get('md5'), checksum))
-            client.disconnect()
+                print("Expecting checksum {}, got {}, update failed!".format(userdata.get('md5'), checksum))
+                #client.disconnect()
         else:
-            # save old md5 for comparison with new firmware
-            if checksum != userdata.get('md5'):
+            if checksum != userdata.get('md5'): # save old md5 for comparison with new firmware
                 userdata.update({'old_md5': checksum})
             else:
-                print(
-                    "Device firmware already up to date with md5 checksum: {}".format(checksum))
+                print("Device firmware already up to date with md5 checksum: {}".format(checksum))
                 client.disconnect()
 
     elif msg.topic.endswith('ota/enabled'):
@@ -81,7 +68,7 @@ def on_message(client, userdata, msg):
             client.disconnect()
 
     elif msg.topic.endswith('$state'):
-        if msg.payload != 'ready':
+        if msg.payload == 'false':
             return
 
         # calcluate firmware md5
@@ -90,21 +77,18 @@ def on_message(client, userdata, msg):
 
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
-        client.subscribe(
-            "{base_topic}{device_id}/$implementation/ota/status".format(**userdata))
-        client.subscribe(
-            "{base_topic}{device_id}/$implementation/ota/enabled".format(**userdata))
+        client.subscribe("{base_topic}{device_id}/$implementation/ota/status".format(**userdata))
+        client.subscribe("{base_topic}{device_id}/$implementation/ota/enabled".format(**userdata))
         client.subscribe("{base_topic}{device_id}/$fw/#".format(**userdata))
 
         # Wait for device info to come in and invoke the on_message callback where update will continue
         print("Waiting for device info...")
 
-    if (not userdata.get("published")) and (userdata.get('ota_enabled')) and \
-       ('old_md5' in userdata.keys()) and (userdata.get('md5') != userdata.get('old_md5')):
+    if ( not userdata.get("published") ) and ( userdata.get('ota_enabled') ) and \
+       ( 'old_md5' in userdata.keys() ) and ( userdata.get('md5') != userdata.get('old_md5') ):
         # push the firmware binary
         userdata.update({"published": True})
-        topic = "{base_topic}{device_id}/$implementation/ota/firmware/{md5}".format(
-            **userdata)
+        topic = "{base_topic}{device_id}/$implementation/ota/firmware/{md5}".format(**userdata)
         print("Publishing new firmware with checksum {}".format(userdata.get('md5')))
         client.publish(topic, userdata['firmware'])
 
@@ -126,14 +110,13 @@ def main(broker_host, broker_port, broker_username, broker_password, broker_ca_c
 
     # save data to be used in the callbacks
     client.user_data_set({
-        "base_topic": base_topic,
-        "device_id": device_id,
-        "firmware": firmware
-    })
+            "base_topic": base_topic,
+            "device_id": device_id,
+            "firmware": firmware
+        })
 
     # start connection
-    print("Connecting to mqtt broker {} on port {}".format(
-        broker_host, broker_port))
+    print("Connecting to mqtt broker {} on port {}".format(broker_host, broker_port))
     client.connect(broker_host, broker_port, 60)
 
     # Blocking call that processes network traffic, dispatches callbacks and handles reconnecting.
@@ -171,7 +154,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--broker-tls-cacert", default=None, required=False,
                         help="CA certificate bundle used to validate TLS connections. If set, TLS will be enabled on the broker conncetion"
-                        )
+    )
 
     # workaround for http://bugs.python.org/issue9694
     parser._optionals.title = "arguments"

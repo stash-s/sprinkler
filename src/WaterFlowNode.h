@@ -2,7 +2,9 @@
 
 #include <Homie.h>
 
-const uint8_t FLOW_SENSOR_PIN = D2;
+const uint8_t FLOW_SENSOR_PIN = 4
+
+;
 
 class WaterFlowNode : public HomieNode {
    public:
