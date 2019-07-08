@@ -1,5 +1,8 @@
 #include "ValveNode.h"
 
+#define ON_VALUE "true"
+#define OFF_VALUE "false"
+
 ValveNode::ValveNode(const char *id, const char *name)
     : HomieNode(id, name, "valve", true, 1, NUMBER_OF_VALVES),
       timeout(0),
@@ -11,11 +14,15 @@ void ValveNode::setup() {
         digitalWrite(i, LOW);
     }
 
-    advertise("state")
+    advertise("on")
         .setName("Valve")
-        .setDatatype("string")
-        .setFormat("on,off")
-        .setRetained(true);
+        .setDatatype("boolean")
+        .setFormat("true,false")
+        .setRetained(true).settable(
+            [&](const HomieRange &range, const String &value) {
+                return valveToggleHandler(range, value);
+            }
+        );
     advertise("timeout").setName("Timeout").setDatatype("integer").settable(
         [&](const HomieRange &range, const String &value) {
             return valveTimeOutHandler(range, value);
@@ -42,7 +49,7 @@ void ValveNode::loop(void) {
                 range.index = i;
                 range.isRange = true;
 
-                setProperty("state").setRange(range).send("off");
+                setProperty("on").setRange(range).send(OFF_VALUE);
                 setProperty("timeout").setRange(range).send("0");
             }
         } else {
@@ -53,16 +60,30 @@ void ValveNode::loop(void) {
 
                 int state = digitalRead(valvePins[i - 1]);
                 if (state) {
-                    setProperty("state").setRange(range).send("on");
+                    setProperty("on").setRange(range).send(ON_VALUE);
                     setProperty("timeout").setRange(range).send(
                         String((timeout - timeNow) / 1000));
                 } else {
-                    setProperty("state").setRange(range).send("off");
+                    setProperty("on").setRange(range).send(OFF_VALUE);
                     setProperty("timeout").setRange(range).send("0");
                 }
             }
         }
     }
+}
+
+bool ValveNode::valveToggleHandler(const HomieRange &range,
+                                    const String &value) {
+
+    Homie.getLogger() << "toggle valve " << range.index << " to " << value << endl;
+
+    if (0 == value.compareTo ("true")) {
+        valveTimeOutHandler (range, "3600");
+    } else {
+        valveTimeOutHandler (range, "0");
+    }
+
+    return true;
 }
 
 bool ValveNode::valveTimeOutHandler(const HomieRange &range,
@@ -84,13 +105,13 @@ bool ValveNode::valveTimeOutHandler(const HomieRange &range,
 
         if (targetRange.index == range.index) {
             digitalWrite(valvePins[i - 1], HIGH);
-            setProperty("state").setRange(targetRange).send("on");
+            setProperty("on").setRange(targetRange).send(ON_VALUE);
             setProperty("timeout")
                 .setRange(targetRange)
                 .send(String((timeout - timeNow) / 1000));
         } else {
             digitalWrite(valvePins[i - 1], LOW);
-            setProperty("state").setRange(targetRange).send("off");
+            setProperty("on").setRange(targetRange).send(OFF_VALUE);
             setProperty("timeout").setRange(targetRange).send(String("0"));
         }
     }

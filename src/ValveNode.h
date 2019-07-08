@@ -29,6 +29,7 @@ class ValveNode : public HomieNode {
     void loop() override;
 
     bool valveTimeOutHandler(const HomieRange &range, const String &value);
+    bool valveToggleHandler(const HomieRange &range, const String &value);
 
     static bool isValidRange(const HomieRange &range);
 
