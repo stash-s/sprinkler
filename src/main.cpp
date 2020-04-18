@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Homie.h>
 
+<<<<<<< HEAD
 const unsigned int NUMBER_OF_VALVES = 5;
 const uint8_t valvePins[NUMBER_OF_VALVES] = {13, 12, 14, 16, 15};
 //const uint8_t flowSensorPin = 15;
@@ -35,22 +36,27 @@ bool valveHandler(const HomieRange &range, const String &value)
 
 void setup()
 {
+=======
+#include "ValveNode.h"
+#include "WaterFlowNode.h"
+
+ValveNode valveNode("valve", "Valve");
+WaterFlowNode waterFlowNode("water", "Water Flow");
+
+void setup() {
+>>>>>>> 31b29a993a7a723a9a8249437b511ee533a04f88
     Serial.begin(9600);
 
-    for (auto i : valvePins)
-    {
-        pinMode(i, OUTPUT);
-        digitalWrite(i, LOW);
-    }
-
     Homie_setBrand("sprinkler");
+<<<<<<< HEAD
     Homie_setFirmware("sprinkler", "0.0.2");
     valveBoxNode.advertise("valve").setName("Valve").setDatatype("boolean").settable(valveHandler);
     //flowNode.advertise("flow").setDatatype("float");
+=======
+    Homie_setFirmware("sprinkler", "0.2.0");
+
+>>>>>>> 31b29a993a7a723a9a8249437b511ee533a04f88
     Homie.setup();
 }
 
-void loop()
-{
-    Homie.loop();
-}
+void loop() { Homie.loop(); }
