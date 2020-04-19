@@ -3,15 +3,23 @@
 #define ON_VALUE "true"
 #define OFF_VALUE "false"
 
+#define STATE_ON LOW
+#define STATE_OFF HIGH
+
 ValveNode::ValveNode(const char *id, const char *name)
-    : HomieNode(id, name, "valve", true, 1, NUMBER_OF_VALVES),
+    : HomieNode(id, name, "switch", true, 1, NUMBER_OF_VALVES),
       timeout(0),
-      timeOfLastUpdate(0) {}
+      timeOfLastUpdate(0) {
+        for (auto i : valvePins) {
+            pinMode(i, OUTPUT);
+            digitalWrite(i, STATE_OFF);
+        }
+      }
 
 void ValveNode::setup() {
     for (auto i : valvePins) {
         pinMode(i, OUTPUT);
-        digitalWrite(i, LOW);
+        digitalWrite(i, STATE_OFF);
     }
 
     advertise("on")
@@ -41,7 +49,7 @@ void ValveNode::loop(void) {
             timeout = 0;
 
             for (auto i : valvePins) {
-                digitalWrite(i, LOW);
+                digitalWrite(i, STATE_OFF);
             }
 
             for (unsigned int i = 1; i <= NUMBER_OF_VALVES; ++i) {
@@ -59,7 +67,7 @@ void ValveNode::loop(void) {
                 range.isRange = true;
 
                 int state = digitalRead(valvePins[i - 1]);
-                if (state) {
+                if (state == STATE_ON) {
                     setProperty("on").setRange(range).send(ON_VALUE);
                     setProperty("timeout").setRange(range).send(
                         String((timeout - timeNow) / 1000));
@@ -83,6 +91,8 @@ bool ValveNode::valveToggleHandler(const HomieRange &range,
         valveTimeOutHandler (range, "0");
     }
 
+    Serial.println ("");
+
     return true;
 }
 
@@ -104,13 +114,13 @@ bool ValveNode::valveTimeOutHandler(const HomieRange &range,
         targetRange.isRange = true;
 
         if (targetRange.index == range.index) {
-            digitalWrite(valvePins[i - 1], HIGH);
+            digitalWrite(valvePins[i - 1], STATE_ON);
             setProperty("on").setRange(targetRange).send(ON_VALUE);
             setProperty("timeout")
                 .setRange(targetRange)
                 .send(String((timeout - timeNow) / 1000));
         } else {
-            digitalWrite(valvePins[i - 1], LOW);
+            digitalWrite(valvePins[i - 1], STATE_OFF);
             setProperty("on").setRange(targetRange).send(OFF_VALUE);
             setProperty("timeout").setRange(targetRange).send(String("0"));
         }

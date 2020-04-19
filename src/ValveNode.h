@@ -4,8 +4,8 @@
 
 #define LOOP_PERIOD_MILLIS 1000
 
-const unsigned int NUMBER_OF_VALVES = 4;
-const uint8_t valvePins[NUMBER_OF_VALVES] = {D5, D6, D7, D8};
+const int NUMBER_OF_VALVES = 5;
+const uint8_t valvePins[NUMBER_OF_VALVES] = {D1, D2, D5, D6, D7};
 
 /**
  * Use cases
