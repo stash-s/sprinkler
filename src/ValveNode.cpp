@@ -48,17 +48,17 @@ void ValveNode::loop(void) {
         if (timeout && (timeout <= timeNow)) {
             timeout = 0;
 
-            for (auto i : valvePins) {
-                digitalWrite(i, STATE_OFF);
-            }
-
             for (unsigned int i = 1; i <= NUMBER_OF_VALVES; ++i) {
                 HomieRange range;
                 range.index = i;
                 range.isRange = true;
 
-                setProperty("on").setRange(range).send(OFF_VALUE);
-                setProperty("timeout").setRange(range).send("0");
+                int state = digitalRead(valvePins[i - 1]);
+                if (state == STATE_ON) {
+                    digitalWrite(valvePins[i - 1], STATE_OFF);
+                    setProperty("on").setRange(range).send(OFF_VALUE);
+                    setProperty("timeout").setRange(range).send("0");
+                }
             }
         } else {
             for (unsigned int i = 1; i <= NUMBER_OF_VALVES; ++i) {
@@ -71,9 +71,6 @@ void ValveNode::loop(void) {
                     setProperty("on").setRange(range).send(ON_VALUE);
                     setProperty("timeout").setRange(range).send(
                         String((timeout - timeNow) / 1000));
-                } else {
-                    setProperty("on").setRange(range).send(OFF_VALUE);
-                    setProperty("timeout").setRange(range).send("0");
                 }
             }
         }
